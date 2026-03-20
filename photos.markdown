@@ -4,19 +4,19 @@
 
 ### Architecture Overview
 
-![Architecture Flowchart](docs/images/architecture_flowchart.jpg)
+![Architecture Flowchart](F:\AI-Global Work\PYTHON_Code's\Memory\Cognitive Memory Core\Photo's\architecture_flowchart.jpg)
 
 ### Final Layer Configuration
 
-![Layers Diagram](docs/images/layers_diagram.jpg)
+![Layers Diagram](F:\AI-Global Work\PYTHON_Code's\Memory\Cognitive Memory Core\Photo's\layers_diagram.jpg)
 *Figure 1: Visual representation of the 5-layer structure with push-down mechanism*
 
 ### Example Output
 
-![Example Script Output](docs/images/example_output_screenshot.jpg)
+![Example Script Output](F:\AI-Global Work\PYTHON_Code's\Memory\Cognitive Memory Core\Photo's\example_output_screenshot.jpg)
 *Figure 2: Sample terminal output showing context and retrieval recommendations*
 
 ### Test Results Comparison
 
-![Before vs After Tuning](docs/images/test_results_comparison.jpg)
+![Before vs After Tuning](F:\AI-Global Work\PYTHON_Code's\Memory\Cognitive Memory Core\Photo's\test_results_comparison.jpg)
 *Figure 3: Quantitative improvement after decay and capacity tuning*
