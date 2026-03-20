@@ -56,7 +56,7 @@ Test scenario: 5 idea additions over ~30 simulated minutes (electric sports car 
 | Subjective “human-like attention feel”              | Medium        | Very High    | **+42%**              | Feels like a thinking companion      |
 ### Final Hyperparameters
 
-```yaml
+
 decay_lambda: 0.80 # Temporal forgetting power (higher = faster forgetting)
 L0_capacity: 5 # Urgent layer capacity (was 3)
 interest_boost_per_add: 0.04 # Automatic interest boost when adding an idea (was 0.08)
@@ -64,11 +64,11 @@ age_penalty_factor: 0.22 # Age effect on layer order
 global_age_penalty: 0.08 # Overall time penalty for the entire session
 push_down_threshold: 0.70 # Minimum time to remain in a layer
 
----
+
 
 ### . Architecture (Core)
 
-```mermaid
+
 graph TD
 
 A[CognitiveMemoryCore] --> B[LayeredWorkingMemory]
@@ -149,6 +149,134 @@ print(f"Retrieval weight: {result['retrieval_weight']:.2f}")
 core.reset("minor")   # gentle priority decay
 # core.reset("major") # drop lower layers + strong decay
 # core.reset("full")  # complete wipe
+
+### How to Install & Run Example (Extended)
+
+Cognitive Memory Core is a lightweight, pure-Python library with **no external dependencies** (except optional ones for embeddings or persistence).  
+It runs on Python 3.9+.
+
+#### 1. Installation
+
+```bash
+# Recommended: clone & install editable (best for development & latest changes)
+git clone https://github.com/rasheddadou/CognitiveMemoryCore.git
+cd CognitiveMemoryCore
+pip install -e .
+
+# Future (if published on PyPI)
+# pip install cognitive-memory-core
+
+2. Quick Minimal ExampleCreate quick_start.py:python
+
+from cognitive_memory_core import CognitiveMemoryCore
+
+core = CognitiveMemoryCore()
+
+# Add ideas with priorities
+core.add("Electric 100% with solid-state battery", priority=0.95)
+core.add("Downforce target 1200 kg @ 320 km/h", priority=0.88)
+
+# Change cognitive mode
+core.set_mode("analytical")
+
+# Boost interest manually
+core.raise_interest(0.18)
+
+# Get LLM-ready context
+result = core.get_context()
+
+print("=== Context for LLM ===")
+print(result["context_text"])
+print("\n=== Retrieval Advice ===")
+print(f"Need retrieval? {result['retrieval_needed']}")
+print(f"Depth: {result['retrieval_depth']}")
+print(f"Layers used: {result['predicted_layers']}")
+
+Run:bash
+
+python quick_start.py
+
+3. Longer Example – Full Session with Reset & Mode ChangeCreate long_session_example.py:python
+
+from cognitive_memory_core import CognitiveMemoryCore
+import time
+
+core = CognitiveMemoryCore()
+
+print("=== Starting design session ===")
+
+# Step 1 – Initial idea
+core.add("Electric sports car with solid-state battery", priority=0.95)
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+# Simulate time passing (decay starts working)
+time.sleep(2)  # in real use this is actual wall-clock time
+
+# Step 2 – Add supporting idea
+core.add("Target downforce 1200 kg at 320 km/h", priority=0.88)
+print("After adding downforce idea:")
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+# Step 3 – Change mode to analytical → layers re-prioritized
+core.set_mode("analytical")
+print("After switching to analytical mode:")
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+# Step 4 – Simulate longer pause (decay should kick in)
+time.sleep(5)  # pretend 5 minutes passed
+
+# Step 5 – Add another idea → should trigger push-down if needed
+core.add("Active cooling system for 350 kW fast charging", priority=0.91)
+print("After adding cooling system:")
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+# Step 6 – Manual minor reset (gentle decay)
+core.reset("minor")
+print("After minor reset:")
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+# Step 7 – Boost interest manually & add high-priority idea → push-down test
+core.raise_interest(0.25)
+core.add("Cybertruck-inspired exterior with better aero", priority=0.98)
+print("After high-priority addition + interest boost:")
+print(core.get_context()["context_text"])
+print("-" * 60)
+
+print("Session end. Final layer state:")
+print(core.working_memory.get_layer_counts())
+
+Run:bash
+
+python long_session_example.py
+
+Expected behavior to observe:Priorities decay slowly over simulated time  
+High-priority additions cause push-down when L0 is full  
+Mode change reorders layer preference  
+Reset "minor" lowers priorities without deleting  
+Interest boost makes router suggest deeper retrieval
+
+4. Optional – Add Embeddings for Future Semantic Featuresbash
+
+pip install sentence-transformers
+
+python
+
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+core.add(
+    "Active cooling for 350 kW charging",
+    priority=0.91,
+    embedding=model.encode("Active cooling for 350 kW charging")
+)
+
+
 
 Run it:
 python example.py
