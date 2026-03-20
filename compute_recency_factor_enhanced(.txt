@@ -1,0 +1,36 @@
+def compute_recency_factor_enhanced(
+    age_hours: float,
+    topic_history_timestamps: list[float],  # كل ظهور سابق (مرتب)
+    topic: str,
+    now: float = None,
+    params: dict = None
+) -> float:
+    if now is None:
+        now = time.time()
+
+    if params is None:
+        params = {...}  # نفس الباراميترات السابقة
+
+    # 1. frequency بـ EWMA + نافذة
+    freq_strength = compute_ewma_frequency(
+        topic_history_timestamps,
+        now,
+        alpha=0.12,
+        max_age_hours=120.0   # 5 أيام مثلاً
+    )
+
+    # 2. lambda حسب core topic
+    effective_lambda = get_effective_lambda(
+        topic,
+        core_topics={"تصميم السيارة", "الديناميكا الهوائية"},
+        base_lambda=params['lambda_decay']
+    )
+
+    # 3. decay
+    decay = math.exp(-effective_lambda * age_hours)
+
+    # 4. boost
+    freq_boost = params['freq_scale'] * math.log(params['freq_log_base'] + freq_strength)
+
+    combined = decay * (1.0 + freq_boost)
+    return max(params['min_recency'], min(params['max_recency'], combined))

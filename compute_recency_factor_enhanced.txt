@@ -1,0 +1,82 @@
+import math
+import time
+from typing import List, Dict, Optional, Set
+
+def compute_recency_factor_enhanced(
+    age_hours: float,
+    topic_history_timestamps: List[float],      # timestamps مرتبة تصاعديًا (unix time)
+    topic: str,
+    now: Optional[float] = None,
+    core_topics: Optional[Set[str]] = None,
+    params: Optional[Dict] = None
+) -> float:
+    """
+    تجمع بين:
+    - exponential decay للعمر
+    - frequency boost باستخدام EWMA (Exponential Weighted Moving Average)
+    - نافذة زمنية للتكرار
+    - decay أبطأ للمواضيع الرئيسية (core topics)
+    """
+    if now is None:
+        now = time.time()
+
+    if params is None:
+        params = {
+            'lambda_base': 0.075,           # decay أساسي
+            'alpha_ewma': 0.12,             # smoothing factor لـ EWMA
+            'max_age_hours_ewma': 120.0,    # نافذة EWMA فعالة (~5 أيام)
+            'freq_log_base': 1.7,
+            'freq_scale': 0.28,
+            'min_recency': 0.04,
+            'max_recency': 1.85,
+            'core_decay_reduction': 0.50    # نسبة التخفيض للـ core topics (50% → decay أبطأ)
+        }
+
+    # ─── 1. حساب التكرار بطريقة EWMA داخل نافذة زمنية ───────────────────────
+    ewma = 0.0
+    total_weight = 0.0
+    cutoff = now - params['max_age_hours_ewma'] * 3600
+
+    for ts in reversed(topic_history_timestamps):
+        if ts < cutoff:
+            break
+        age_h = (now - ts) / 3600
+        weight = math.exp(-params['alpha_ewma'] * age_h)
+        ewma += weight
+        total_weight += weight
+
+    freq_strength = ewma / total_weight if total_weight > 0 else 0.0
+
+    # ─── 2. تعديل lambda حسب ما إذا كان الموضوع core أم لا ─────────────────────
+    effective_lambda = params['lambda_base']
+    if core_topics and topic in core_topics:
+        effective_lambda *= (1 - params['core_decay_reduction'])
+
+    # ─── 3. الجزء الزمني: exponential decay ────────────────────────────────────
+    decay = math.exp(-effective_lambda * max(0.0, age_hours))
+
+    # ─── 4. الـ frequency boost (log لتجنب الانفجار) ───────────────────────────
+    freq_boost = params['freq_scale'] * math.log(params['freq_log_base'] + freq_strength)
+
+    # ─── 5. الدمج النهائي + حدود آمنة ─────────────────────────────────────────
+    combined = decay * (1.0 + freq_boost)
+    return max(params['min_recency'], min(params['max_recency'], combined))
+
+
+# مثال استخدام بسيط
+if __name__ == "__main__":
+    timestamps_example = [
+        time.time() - 3600 * 2,   # قبل ساعتين
+        time.time() - 3600 * 3,
+        time.time() - 3600 * 5,
+        time.time() - 3600 * 26,
+    ]
+
+    score = compute_recency_factor_enhanced(
+        age_hours=2.5,
+        topic_history_timestamps=timestamps_example,
+        topic="تصميم السيارة",
+        core_topics={"تصميم السيارة", "الديناميكا الهوائية"},
+        now=time.time()
+    )
+    print(f"Recency factor: {score:.3f}")

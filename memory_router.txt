@@ -1,0 +1,75 @@
+from typing import Dict, Any
+
+def memory_router(
+    current_thought_emb: Any,               # embedding vector
+    context_summary_emb: Any,
+    mode: str,
+    uncertainty: float,                     # 0.0 إلى 1.0
+    user_emphasis: float = 0.0,
+    recency_score: float = 1.0,             # من الدالة السابقة
+    cosine_sim_func = None                  # يمكن تمرير دالة cosine similarity
+) -> Dict[str, Any]:
+    """
+    يحسب درجة الاهتمام ثم يترجمها إلى عمق الاسترجاع
+    """
+    if cosine_sim_func is None:
+        # افتراضي بسيط (في الواقع يجب استخدام cosine من numpy أو torch)
+        cosine_sim = lambda a, b: 0.7   # placeholder
+
+    semantic_match = cosine_sim(current_thought_emb, context_summary_emb)
+
+    # أوزان مقترحة (يمكن تهيئتها لاحقًا)
+    interest_raw = (
+        0.38 * semantic_match +
+        0.32 * (1.0 - uncertainty) * -1 +   # uncertainty تزيد الاهتمام
+        0.14 * MODE_INTENSITY.get(mode, 0.5) +
+        0.10 * recency_score +
+        0.06 * user_emphasis
+    )
+
+    interest_score = 1 / (1 + math.exp(-(interest_raw * 5 - 2.2)))   # sigmoid ناعم
+
+    # ─── ترجمة interest_score إلى قرارات العمق ────────────────────────────────
+    if interest_score < 0.28:
+        depth = "surface"
+        max_items = 16
+        extra_layers = 0
+        strategy = "vector_fast"
+    elif interest_score < 0.62:
+        depth = "mid"
+        max_items = 120
+        extra_layers = 1
+        strategy = "hybrid_rerank"
+    elif interest_score < 0.87:
+        depth = "deep"
+        max_items = 750
+        extra_layers = 3
+        strategy = "graph_guided"
+    else:
+        depth = "exhaustive"
+        max_items = 4000
+        extra_layers = 5
+        strategy = "recursive_full"
+
+    return {
+        "interest_score": round(float(interest_score), 3),
+        "depth_level": depth,
+        "max_initial_items": max_items,
+        "extra_traversal_layers": extra_layers,
+        "retrieval_strategy": strategy,
+        "context_weight": round(max(0.12, 1.0 - interest_score * 0.92), 3),
+        "retrieval_weight": round(min(0.96, interest_score * 1.08), 3),
+        "allow_recursive": interest_score > 0.84
+    }
+
+
+# قاموس مساعد لشدة الأنماط (يمكن تعديله)
+MODE_INTENSITY = {
+    "intuition": 0.4,
+    "brainstorm": 0.45,
+    "visual-spatial": 0.65,
+    "analytical": 0.85,
+    "calculation": 0.92,
+    "episodic": 0.78,
+    "semantic": 0.88,
+}

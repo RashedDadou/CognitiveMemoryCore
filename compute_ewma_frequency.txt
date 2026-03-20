@@ -1,0 +1,25 @@
+def compute_ewma_frequency(
+    event_timestamps: list[float],     # مرتبة تصاعديًا
+    now: float,
+    alpha: float = 0.15,               # smoothing factor (0 < alpha ≤ 1)
+    max_age_hours: float = 168.0       # نافذة فعالة، مثلاً أسبوع
+) -> float:
+    """
+    يعطي وزن أكبر للظهورات الأحدث
+    """
+    ewma = 0.0
+    total_weight = 0.0
+
+    for ts in reversed(event_timestamps):  # نبدأ من الأحدث
+        age_hours = (now - ts) / 3600
+        if age_hours > max_age_hours:
+            break
+            
+        weight = math.exp(-alpha * age_hours)
+        ewma += weight
+        total_weight += weight
+
+    if total_weight == 0:
+        return 0.0
+        
+    return ewma / total_weight   # أو فقط ewma إذا أردت قيمة مطلقة
