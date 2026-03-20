@@ -105,8 +105,6 @@ It runs on Python 3.9+.
 
 #### Installation
 
-```bash
-
 ### Architecture Overview
 
 ![Cognitive Memory Core Architecture](docs/images/architecture_flowchart.jpg)
@@ -129,6 +127,7 @@ It runs on Python 3.9+.
 
 *Figure 3: Quantitative improvement after decay and capacity tuning*
 
+```bash
 
 # Option 1: Clone from GitHub (recommended for development / latest changes)
 git clone https://github.com/rasheddadou/CognitiveMemoryCore.git
