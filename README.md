@@ -106,6 +106,30 @@ It runs on Python 3.9+.
 #### Installation
 
 ```bash
+
+### Architecture Overview
+
+![Cognitive Memory Core Architecture](docs/images/architecture_flowchart.jpg)
+
+### Final Layer Configuration
+
+![5-Layer Memory Structure with Push-Down](docs/images/layers_diagram.jpg)
+
+*Figure 1: Visual representation of the layered memory with automatic push-down mechanism*
+
+### Example Output
+
+![Sample Output from example.py](docs/images/example_output_screenshot.jpg)
+
+*Figure 2: Terminal output showing context and retrieval recommendations*
+
+### Test Results Comparison
+
+![Before vs After Tuning Results](docs/images/test_results_comparison.jpg)
+
+*Figure 3: Quantitative improvement after decay and capacity tuning*
+
+
 # Option 1: Clone from GitHub (recommended for development / latest changes)
 git clone https://github.com/rasheddadou/CognitiveMemoryCore.git
 cd CognitiveMemoryCore
